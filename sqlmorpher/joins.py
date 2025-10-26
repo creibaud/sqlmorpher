@@ -34,7 +34,9 @@ def _load_table(metadata: MetaData, engine, table_name: str) -> Table:
 def _ensure_columns_exist(table: Table, columns: List[str]) -> None:
     for col in columns:
         if col not in table.c:
-            raise ValueError(f"Column '{col}' does not exist in table '{table.name}'.")
+            raise ValueError(
+                f"Column '{col}' does not exist in table '{table.name}'."
+            )
 
 
 def _ensure_referenced_tables(
@@ -107,8 +109,12 @@ def validate_joins(
             added_tables, (left_table_name, right_table_name), table_name
         )
 
-        left_table = _ensure_table_and_load(left_table_name, metadata, db, tables)
-        right_table = _ensure_table_and_load(right_table_name, metadata, db, tables)
+        left_table = _ensure_table_and_load(
+            left_table_name, metadata, db, tables
+        )
+        right_table = _ensure_table_and_load(
+            right_table_name, metadata, db, tables
+        )
 
         table_map[left_table_name] = left_table
         table_map[right_table_name] = right_table
@@ -120,7 +126,8 @@ def validate_joins(
         right_type = _get_column_type(right_table, right_col_name)
         if left_type != right_type:
             raise ValueError(
-                f"Type mismatch between columns '{left_table_name}.{left_col_name}' ({left_type}) "
+                "Type mismatch between columns"
+                f" '{left_table_name}.{left_col_name}' ({left_type}) "
                 f"and '{right_table_name}.{right_col_name}' ({right_type})"
             )
 
@@ -135,7 +142,9 @@ def validate_joins(
 
     first_col = list(root_table.c)[0]
     stmt = select(first_col).select_from(from_clause).limit(1)
-    sql_str = str(stmt.compile(db.engine, compile_kwargs={"literal_binds": True}))
+    sql_str = str(
+        stmt.compile(db.engine, compile_kwargs={"literal_binds": True})
+    )
 
     try:
         db.execute_query(sql_str)
@@ -153,13 +162,15 @@ def generate_join_query(
     select_columns: Dict[str, str],
 ) -> str:
     """
-    Generate a SQL query with joins based on the provided root table and join specifications.
+    Generate a SQL query with joins based on the provided root table and
+    join specifications.
 
     Args:
         db (Database): The database instance.
         root_table_name (str): The name of the root table.
         join_tables (List[Dict[str, str]]): A list of join specifications.
-        select_columns (Dict[str, str]): A dictionary mapping source columns to aliases.
+        select_columns (Dict[str, str]): A dictionary mapping source columns
+        to aliases.
 
     Returns:
         str: The generated SQL query with joins.
@@ -167,10 +178,14 @@ def generate_join_query(
     from_clause, table_map = validate_joins(db, root_table_name, join_tables)
 
     columns = [
-        table_map[table_col.split(".")[0]].c[table_col.split(".")[1]].label(alias)
+        table_map[table_col.split(".")[0]]
+        .c[table_col.split(".")[1]]
+        .label(alias)
         for table_col, alias in select_columns.items()
     ]
 
     stmt = select(*columns).select_from(from_clause)
-    sql_str = str(stmt.compile(db.engine, compile_kwargs={"literal_binds": True}))
+    sql_str = str(
+        stmt.compile(db.engine, compile_kwargs={"literal_binds": True})
+    )
     return sql_str

@@ -2,7 +2,11 @@ import pytest
 import tempfile
 import yaml
 import os
-from sqlmorpher import load_config, load_db_config, load_migration_config, Database
+from sqlmorpher import (
+    load_db_config,
+    load_migration_config,
+    Database,
+)
 
 
 # On simule les variables d'environnement pour les mots de passe

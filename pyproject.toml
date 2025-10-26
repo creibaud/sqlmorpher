@@ -26,3 +26,6 @@ dependencies = [
     "tqdm>=4.0",
     "rich>=14.0"
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/creibaud/sqlmorpher"

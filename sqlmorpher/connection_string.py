@@ -69,7 +69,9 @@ def _create_server_based(
 
 
 @validate_call
-def _create_odbc(type: str, conn_str: str, driver: Optional[str] = None) -> str:
+def _create_odbc(
+    type: str, conn_str: str, driver: Optional[str] = None
+) -> str:
     return (
         f"{type}+{driver}:///?odbc_connect={urllib.parse.quote_plus(conn_str)}"
         if driver
@@ -96,7 +98,9 @@ def postgresql(
     port = port or DEFAULTS["postgresql"]["port"]
     user = user or os.getenv("POSTGRES_USER") or DEFAULTS["postgresql"]["user"]
     password = (
-        password or os.getenv("POSTGRES_PASSWORD") or DEFAULTS["postgresql"]["password"]
+        password
+        or os.getenv("POSTGRES_PASSWORD")
+        or DEFAULTS["postgresql"]["password"]
     )
     database = database or DEFAULTS["postgresql"]["database"]
     return _create_server_based(
@@ -114,7 +118,11 @@ def mysql(
     host = host or DEFAULTS["mysql"]["host"]
     port = port or DEFAULTS["mysql"]["port"]
     user = user or os.getenv("MYSQL_USER") or DEFAULTS["mysql"]["user"]
-    password = password or os.getenv("MYSQL_PASSWORD") or DEFAULTS["mysql"]["password"]
+    password = (
+        password
+        or os.getenv("MYSQL_PASSWORD")
+        or DEFAULTS["mysql"]["password"]
+    )
     database = database or DEFAULTS["mysql"]["database"]
     return _create_server_based(
         "mysql", host, port, user, password, database, driver="pymysql"
@@ -132,7 +140,9 @@ def oracle(
     port = port or DEFAULTS["oracle"]["port"]
     user = user or os.getenv("ORACLE_USER") or DEFAULTS["oracle"]["user"]
     password = (
-        password or os.getenv("ORACLE_PASSWORD") or DEFAULTS["oracle"]["password"]
+        password
+        or os.getenv("ORACLE_PASSWORD")
+        or DEFAULTS["oracle"]["password"]
     )
     database = database or DEFAULTS["oracle"]["database"]
     return _create_server_based(
@@ -149,13 +159,18 @@ def sqlserver(
     driver: str = "ODBC Driver 18 for SQL Server",
     options: Optional[Dict[str, str]] = None,
 ) -> str:
-    conn_str = f"Driver={{{driver}}};Server={host},{port};Database={database};UID={user};PWD={password}"
+    conn_str = (
+        f"Driver={{{driver}}};Server={host},{port};"
+        f"Database={database};UID={user};PWD={password}"
+    )
     if options:
         conn_str += ";" + ";".join(f"{k}={v}" for k, v in options.items())
     return _create_odbc("mssql", conn_str, driver="pyodbc")
 
 
-def access(path: str, driver: str = "Microsoft Access Driver (*.mdb, *.accdb)") -> str:
+def access(
+    path: str, driver: str = "Microsoft Access Driver (*.mdb, *.accdb)"
+) -> str:
     conn_str = f"Driver={{{driver}}};DBQ={path}"
     return _create_odbc("access", conn_str, driver="pyodbc")
 
@@ -183,22 +198,33 @@ DB_BUILDERS = {
 
 
 def create_connection_string(db_type: str, **kwargs) -> str:
-    """Create a database connection string (DSN) based on the database type and parameters.
+    """Create a database connection string (DSN) based on the database
+    type and parameters.
 
     Args:
         db_type (str): The type of the database. One of:
-            "sqlite", "duckdb", "postgresql", "mysql", "oracle", "mssql" (alias "sqlserver"),
+            "sqlite", "duckdb", "postgresql", "mysql", "oracle",
+            "mssql" (alias "sqlserver"),
             "access", "firebird".
         For the following builders the accepted keyword arguments are:
 
         sqlite / duckdb:
-            path (Optional[str]): Path to the database file. If omitted, an in-memory DB is used.
+            path (Optional[str]): Path to the database file.
+            If omitted, an in-memory DB is used.
 
         postgresql / mysql / oracle:
-            host (Optional[str]): Database host (defaults provided in DEFAULTS).
-            port (Optional[int]): Database port (defaults provided in DEFAULTS).
-            user (Optional[str]): Username (can also be read from env vars: POSTGRES_USER, MYSQL_USER, ORACLE_USER).
-            password (Optional[str]): Password (can also be read from env vars: POSTGRES_PASSWORD, MYSQL_PASSWORD, ORACLE_PASSWORD).
+            host (Optional[str]): Database host (defaults provided in DEFAULTS)
+            port (Optional[int]): Database port (defaults provided in DEFAULTS)
+            user (Optional[str]): Username
+            can also be read from env vars:
+            - POSTGRES_USER,
+            - MYSQL_USER,
+            - ORACLE_USER
+            password (Optional[str]): Password
+            can also be read from env vars:
+             - POSTGRES_PASSWORD,
+             - MYSQL_PASSWORD,
+             - ORACLE_PASSWORD
             database (Optional[str]): Database name.
 
         mssql / sqlserver:
@@ -207,12 +233,15 @@ def create_connection_string(db_type: str, **kwargs) -> str:
             user (str): Username.
             password (str): Password.
             database (str): Database name.
-            driver (str): ODBC driver name (default "ODBC Driver 18 for SQL Server").
-            options (Optional[Dict[str, str]]): Additional key/value options appended to the ODBC connection string.
+            driver (str): ODBC driver name
+            (default "ODBC Driver 18 for SQL Server").
+            options (Optional[Dict[str, str]]): Additional key/value options
+            appended to the ODBC connection string.
 
         access:
             path (str): Path to the .mdb/.accdb file.
-            driver (str): ODBC driver name (default "Microsoft Access Driver (*.mdb, *.accdb)").
+            driver (str): ODBC driver name
+            (default "Microsoft Access Driver (*.mdb, *.accdb)").
 
         firebird:
             path (str): Path to the database file.
@@ -220,7 +249,8 @@ def create_connection_string(db_type: str, **kwargs) -> str:
             password (str): Password (default "masterkey").
             driver (str): ODBC driver name (default "Firebird").
 
-        Note: Parameters are forwarded to the corresponding builder function for the chosen db_type.
+        Note: Parameters are forwarded to the corresponding builder function
+        for the chosen db_type.
 
     Raises:
         ValueError: If the database type is not supported.

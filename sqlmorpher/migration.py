@@ -5,7 +5,9 @@ from typing import Dict, List, Callable
 from tqdm.rich import tqdm
 
 
-def _lookup_insert_fn(transform_registry: Dict[str, Callable], insert_fn_name: str):
+def _lookup_insert_fn(
+    transform_registry: Dict[str, Callable], insert_fn_name: str
+):
     if not insert_fn_name or not isinstance(insert_fn_name, str):
         return None
     insert_fn = transform_registry.get(insert_fn_name)
@@ -17,7 +19,9 @@ def _lookup_insert_fn(transform_registry: Dict[str, Callable], insert_fn_name: s
     return insert_fn
 
 
-def _process_rows(new_db: Database, target_table: str, rows, insert_fn: Callable):
+def _process_rows(
+    new_db: Database, target_table: str, rows, insert_fn: Callable
+):
     for row in rows:
         row_dict = dict(row._mapping)
 
@@ -42,7 +46,8 @@ def migrate(
         old_db (Database): The source database to migrate data from.
         new_db (Database): The target database to migrate data to.
         mapping (List[Dict]): The mapping configuration for migration.
-        transform_registry (Dict[str, Callable], optional): A registry of transformation functions. Defaults to None.
+        transform_registry (Dict[str, Callable], optional): A registry of
+        transformation functions. Defaults to None.
 
     Returns:
         str: A message indicating the result of the migration.

@@ -202,7 +202,8 @@ def test_migrate_with_unknown_function_raises_error(old_db, new_db):
     ]
 
     with pytest.raises(
-        ValueError, match="Transform function 'non_existent_function' not found"
+        ValueError,
+        match="Transform function 'non_existent_function' not found",
     ):
         migrate(old_db, new_db, mapping, transform_registry=transform_registry)
 

@@ -40,7 +40,9 @@ class Database:
         columns_list = list(row.keys())
         placeholders = ", ".join([f":{c}" for c in columns_list])
         columns_str = ", ".join(columns_list)
-        insert_sql = f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})"
+        insert_sql = (
+            f"INSERT INTO {table} ({columns_str}) VALUES ({placeholders})"
+        )
         self.execute_query(insert_sql, params=row)
 
     def reflect_tables(self):
