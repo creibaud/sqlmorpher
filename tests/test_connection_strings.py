@@ -3,32 +3,34 @@ import pytest
 from sqlmorpher import create_connection_string
 
 
-def test_sqlite_connection_string_tempfile():
+def test_sqlite_connection_string_tempfile() -> None:
     with tempfile.NamedTemporaryFile(suffix=".sqlite") as tmp:
         dsn = create_connection_string("sqlite", path=tmp.name)
         assert dsn.startswith("sqlite:///")
 
 
-def test_sqlite_memory_connection_string():
+def test_sqlite_memory_connection_string() -> None:
     dsn = create_connection_string("sqlite")
     assert dsn == "sqlite:///:memory:"
 
 
-def test_duckdb_connection_string_tempfile():
+def test_duckdb_connection_string_tempfile() -> None:
     with tempfile.NamedTemporaryFile(suffix=".duckdb") as tmp:
         dsn = create_connection_string("duckdb", path=tmp.name)
         assert dsn.startswith("duckdb:///")
 
 
-def test_access_connection_string_tempfile():
+def test_access_connection_string_tempfile() -> None:
     with tempfile.NamedTemporaryFile(suffix=".accdb") as tmp:
         dsn = create_connection_string(
-            "access", path=tmp.name, driver="Microsoft Access Driver (*.mdb, *.accdb)"
+            "access",
+            path=tmp.name,
+            driver="Microsoft Access Driver (*.mdb, *.accdb)",
         )
         assert dsn.startswith("access+pyodbc:///")
 
 
-def test_firebird_connection_string_tempfile():
+def test_firebird_connection_string_tempfile() -> None:
     with tempfile.NamedTemporaryFile(suffix=".fdb") as tmp:
         dsn = create_connection_string(
             "firebird", path=tmp.name, user="sysdba", password="masterkey"
@@ -36,7 +38,7 @@ def test_firebird_connection_string_tempfile():
         assert dsn.startswith("firebird+pyodbc:///")
 
 
-def test_postgresql_connection_string():
+def test_postgresql_connection_string() -> None:
     dsn = create_connection_string(
         "postgresql",
         host="localhost",
@@ -49,7 +51,7 @@ def test_postgresql_connection_string():
     assert "secret" in dsn
 
 
-def test_mysql_connection_string():
+def test_mysql_connection_string() -> None:
     dsn = create_connection_string(
         "mysql",
         host="localhost",
@@ -62,7 +64,7 @@ def test_mysql_connection_string():
     assert "secret" in dsn
 
 
-def test_oracle_connection_string():
+def test_oracle_connection_string() -> None:
     dsn = create_connection_string(
         "oracle",
         host="localhost",
@@ -75,7 +77,7 @@ def test_oracle_connection_string():
     assert "secret" in dsn
 
 
-def test_sqlserver_connection_string():
+def test_sqlserver_connection_string() -> None:
     dsn = create_connection_string(
         "mssql",
         host="localhost",
@@ -90,12 +92,12 @@ def test_sqlserver_connection_string():
     assert "Encrypt%3Dyes" in dsn
 
 
-def test_invalid_db_type():
+def test_invalid_db_type() -> None:
     with pytest.raises(ValueError):
         create_connection_string("notadb")
 
 
-def test_invalid_port():
+def test_invalid_port() -> None:
     with pytest.raises(ValueError):
         create_connection_string(
             "postgresql",

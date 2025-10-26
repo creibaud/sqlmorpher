@@ -1,6 +1,6 @@
 import re
-from typing import List, Dict, Optional, Tuple, Any
-from sqlalchemy import inspect, Table, MetaData, select
+from typing import List, Dict, Optional, Tuple, Any, Set
+from sqlalchemy import inspect, Table, MetaData, select, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.sqltypes import Integer, String, Date, Boolean
 from pydantic import validate_call
@@ -24,10 +24,12 @@ def _get_column_type(table: Table, column: str) -> Optional[str]:
 
 def _parse_on_clause(on: str) -> Optional[Tuple[str, str, str, str]]:
     m = re.match(r"(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)", on)
-    return m.groups() if m else None
+    if not m:
+        return None
+    return (m.group(1), m.group(2), m.group(3), m.group(4))
 
 
-def _load_table(metadata: MetaData, engine, table_name: str) -> Table:
+def _load_table(metadata: MetaData, engine: Engine, table_name: str) -> Table:
     return Table(table_name, metadata, autoload_with=engine)
 
 
@@ -40,7 +42,7 @@ def _ensure_columns_exist(table: Table, columns: List[str]) -> None:
 
 
 def _ensure_referenced_tables(
-    added_tables: set, referenced: Tuple[str, str], current_table: str
+    added_tables: Set[str], referenced: Tuple[str, str], current_table: str
 ) -> None:
     for t in referenced:
         if t not in added_tables and t != current_table:
@@ -48,7 +50,7 @@ def _ensure_referenced_tables(
 
 
 def _ensure_table_and_load(
-    name: str, metadata: MetaData, db: Database, tables: set
+    name: str, metadata: MetaData, db: Database, tables: Set[str]
 ) -> Table:
     if name not in tables:
         raise ValueError(f"Table '{name}' does not exist.")
@@ -65,7 +67,7 @@ def _parse_on_or_raise(on: str) -> Tuple[str, str, str, str]:
 @validate_call(config={"arbitrary_types_allowed": True})
 def validate_joins(
     db: Database, root_table_name: str, join_tables: List[Dict[str, str]]
-) -> Tuple[Any, Dict[str, Any]]:
+) -> Tuple[Any, Dict[str, Table]]:
     """Validate join configurations for SQL queries.
 
     Args:
@@ -85,11 +87,11 @@ def validate_joins(
 
     metadata = MetaData()
     added_tables = {root_table_name}
-    table_map = {}
+    table_map: Dict[str, Table] = {}
 
     root_table = _load_table(metadata, db.engine, root_table_name)
     table_map[root_table_name] = root_table
-    from_clause = root_table
+    from_clause: Any = root_table
 
     for join_info in join_tables:
         table_name = join_info.get("table")

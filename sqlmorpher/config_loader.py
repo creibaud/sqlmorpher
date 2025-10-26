@@ -2,12 +2,12 @@ import os
 import yaml
 from .db import Database
 from pydantic import validate_call
-from typing import Dict, List
+from typing import Dict, List, Any
 from .connection_string import create_connection_string
 
 
 @validate_call
-def load_config(path: str) -> dict:
+def load_config(path: str) -> Dict[str, Any]:
     """
     Load a YAML configuration file and return its contents as a dictionary.
     Args:
@@ -20,7 +20,7 @@ def load_config(path: str) -> dict:
 
 
 @validate_call
-def load_migration_config(path: str) -> List:
+def load_migration_config(path: str) -> List[Dict[str, Any]]:
     """
     Load a migration configuration from a YAML file.
     Args:
@@ -42,7 +42,7 @@ def load_db_config(path: str) -> Dict[str, Database]:
         Database instances.
     """
     db_configs = load_config(path).get("databases", {})
-    databases = {}
+    databases: Dict[str, Database] = {}
     for key in ["source", "target"]:
         conf = db_configs.get(key)
         if not conf:

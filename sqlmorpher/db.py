@@ -1,15 +1,16 @@
-from sqlalchemy import create_engine, Engine, MetaData, text, Result
+from sqlalchemy import create_engine, Engine, MetaData, text
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from pydantic import validate_call
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Sequence
 
 
 class Database:
     type: str
     engine: Engine
     metadata: MetaData
-    session_factory: sessionmaker
+    session_factory: sessionmaker[Session]
 
     @validate_call
     def __init__(self, type: str, connection_string: str):
@@ -22,18 +23,20 @@ class Database:
     @validate_call
     def execute_query(
         self, query: str, params: Optional[dict[str, Any]] = None
-    ) -> Result:
+    ) -> Optional[Sequence[RowMapping]]:
         session: Session = self.session_factory()
         try:
-            result = session.execute(text(query), params)
+            result: Any = session.execute(text(query), params)
             session.commit()
+
+            if getattr(result, "returns_rows", False):
+                return result.mappings().fetchall()
+            return None
         except SQLAlchemyError as e:
             session.rollback()
             raise e
         finally:
             session.close()
-
-        return result
 
     @validate_call
     def insert_row(self, table: str, row: Dict[str, Any]) -> None:
@@ -45,7 +48,7 @@ class Database:
         )
         self.execute_query(insert_sql, params=row)
 
-    def reflect_tables(self):
+    def reflect_tables(self) -> None:
         self.metadata.reflect(bind=self.engine)
 
     def validate_connection(self) -> bool:

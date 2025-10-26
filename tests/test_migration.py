@@ -1,11 +1,13 @@
 import pytest
 from sqlalchemy import Table, Column, Integer, String, MetaData
 from sqlmorpher import Database, migrate
-from typing import Dict, Any, Optional
+from sqlmorpher.migration import TransformFn
+from sqlmorpher.migration import row_to_dict
+from typing import Dict, Any, Optional, List, Mapping
 
 
 @pytest.fixture
-def old_db():
+def old_db() -> Database:
     db = Database(type="sqlite", connection_string="sqlite:///:memory:")
     metadata = MetaData()
     Table(
@@ -32,7 +34,7 @@ def old_db():
 
 
 @pytest.fixture
-def new_db():
+def new_db() -> Database:
     db = Database(type="sqlite", connection_string="sqlite:///:memory:")
     metadata = MetaData()
     Table(
@@ -47,9 +49,13 @@ def new_db():
     return db
 
 
-def test_migrate_with_transform_function(old_db, new_db):
-    def transform_user_data(row: Dict[str, Any]) -> Dict[str, Any]:
-        transformed = row.copy()
+def test_migrate_with_transform_function(
+    old_db: Database, new_db: Database
+) -> None:
+    def transform_user_data(
+        row: Mapping[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        transformed = row_to_dict(row)
 
         if "login" in transformed and transformed["login"]:
             transformed["login"] = transformed["login"].upper()
@@ -59,11 +65,11 @@ def test_migrate_with_transform_function(old_db, new_db):
 
         return transformed
 
-    transform_registry = {
+    transform_registry: Dict[str, TransformFn] = {
         "transform_user_data": transform_user_data,
     }
 
-    mapping = [
+    mapping: List[Dict[str, Any]] = [
         {
             "root_table": "users",
             "joins": [
@@ -85,18 +91,24 @@ def test_migrate_with_transform_function(old_db, new_db):
 
     migrate(old_db, new_db, mapping, transform_registry=transform_registry)
 
-    result = new_db.execute_query("SELECT * FROM comptes").fetchall()
+    result = new_db.execute_query("SELECT * FROM comptes")
+    assert result is not None
     assert len(result) == 1
 
-    row = dict(result[0]._mapping)
+    row = row_to_dict(result[0])
 
     assert row["login"] == "ALICE"
     assert row["telephone"] == "+33-123456"
     assert row["id"] == 1
 
 
-def test_migrate_with_filtering_function(old_db, new_db):
-    def filter_users(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def test_migrate_with_filtering_function(
+    old_db: Database, new_db: Database
+) -> None:
+    def filter_users(
+        row: Mapping[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        row = row_to_dict(row)
         if not row.get("telephone"):
             return None
 
@@ -104,11 +116,11 @@ def test_migrate_with_filtering_function(old_db, new_db):
 
         return row
 
-    transform_registry = {
+    transform_registry: Dict[str, TransformFn] = {
         "filter_users": filter_users,
     }
 
-    mapping = [
+    mapping: List[Dict[str, Any]] = [
         {
             "root_table": "users",
             "joins": [
@@ -127,33 +139,38 @@ def test_migrate_with_filtering_function(old_db, new_db):
             "insert_function": "filter_users",
         }
     ]
-
     migrate(old_db, new_db, mapping, transform_registry=transform_registry)
 
-    result = new_db.execute_query("SELECT * FROM comptes").fetchall()
+    result = new_db.execute_query("SELECT * FROM comptes")
 
+    assert result is not None
     assert len(result) == 1
 
     for row in result:
-        row_dict = dict(row._mapping)
+        row_dict = row_to_dict(row)
         assert row_dict["telephone"]
         assert "-" not in row_dict["telephone"]
         assert " " not in row_dict["telephone"]
+        assert " " not in row_dict["telephone"]
 
 
-def test_migrate_with_multiple_transforms(old_db, new_db):
-    def uppercase_transform(row: Dict[str, Any]) -> Dict[str, Any]:
-        transformed = row.copy()
+def test_migrate_with_multiple_transforms(
+    old_db: Database, new_db: Database
+) -> None:
+    def uppercase_transform(
+        row: Mapping[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        transformed = row_to_dict(row)
         for key, value in transformed.items():
             if isinstance(value, str):
                 transformed[key] = value.upper()
         return transformed
 
-    transform_registry = {
+    transform_registry: Dict[str, TransformFn] = {
         "uppercase_transform": uppercase_transform,
     }
 
-    mapping = [
+    mapping: List[Dict[str, Any]] = [
         {
             "root_table": "users",
             "joins": [
@@ -175,20 +192,25 @@ def test_migrate_with_multiple_transforms(old_db, new_db):
 
     migrate(old_db, new_db, mapping, transform_registry=transform_registry)
 
-    result = new_db.execute_query("SELECT * FROM comptes").fetchall()
+    result = new_db.execute_query("SELECT * FROM comptes")
+    assert result is not None
     assert len(result) == 1
 
-    row = dict(result[0]._mapping)
+    row = row_to_dict(result[0])
+    assert row["login"] == "ALICE"
+    assert row["telephone"] == "123456"
     assert row["login"] == "ALICE"
     assert row["telephone"] == "123456"
 
 
-def test_migrate_with_unknown_function_raises_error(old_db, new_db):
-    transform_registry = {
-        "existing_function": lambda x: x,
+def test_migrate_with_unknown_function_raises_error(
+    old_db: Database, new_db: Database
+) -> None:
+    transform_registry: Dict[str, TransformFn] = {
+        "existing_function": lambda x: dict(x),
     }
 
-    mapping = [
+    mapping: List[Dict[str, Any]] = [
         {
             "root_table": "users",
             "joins": [],
@@ -208,8 +230,10 @@ def test_migrate_with_unknown_function_raises_error(old_db, new_db):
         migrate(old_db, new_db, mapping, transform_registry=transform_registry)
 
 
-def test_migrate_without_transform_function(old_db, new_db):
-    mapping = [
+def test_migrate_without_transform_function(
+    old_db: Database, new_db: Database
+) -> None:
+    mapping: List[Dict[str, Any]] = [
         {
             "root_table": "users",
             "joins": [
@@ -227,12 +251,15 @@ def test_migrate_without_transform_function(old_db, new_db):
             "target_table": "comptes",
         }
     ]
-
     migrate(old_db, new_db, mapping)
 
-    result = new_db.execute_query("SELECT * FROM comptes").fetchall()
+    result = new_db.execute_query("SELECT * FROM comptes")
+    assert result is not None
     assert len(result) == 1
 
-    row = dict(result[0]._mapping)
+    row = row_to_dict(result[0])
+    assert row["login"] == "alice"
+    assert row["telephone"] == "123456"
+    row = row_to_dict(result[0])
     assert row["login"] == "alice"
     assert row["telephone"] == "123456"

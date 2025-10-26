@@ -1,4 +1,5 @@
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 import tempfile
 import yaml
 import os
@@ -7,18 +8,19 @@ from sqlmorpher import (
     load_migration_config,
     Database,
 )
+from typing import Dict, Any, List
 
 
-# On simule les variables d'environnement pour les mots de passe
 @pytest.fixture(autouse=True)
-def set_env_vars(monkeypatch):
+def set_env_vars(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DB_SOURCE_PASSWORD", "secret1")
+    monkeypatch.setenv("DB_TARGET_PASSWORD", "secret2")
     monkeypatch.setenv("DB_TARGET_PASSWORD", "secret2")
 
 
 @pytest.fixture
-def migration_yaml_file():
-    content = {
+def migration_yaml_file() -> Any:
+    content: Dict[str, List[Dict[str, Any]]] = {
         "migrations": [
             {
                 "name": "Test migration",
@@ -37,7 +39,7 @@ def migration_yaml_file():
 
 
 @pytest.fixture
-def db_yaml_file():
+def db_yaml_file() -> Any:
     content = {
         "databases": {
             "source": {
@@ -55,13 +57,13 @@ def db_yaml_file():
         os.remove(f.name)
 
 
-def test_load_config_and_migration(migration_yaml_file):
+def test_load_config_and_migration(migration_yaml_file: str) -> None:
     migration_conf = load_migration_config(migration_yaml_file)
     assert len(migration_conf) == 1
     assert migration_conf[0]["root_table"] == "users"
 
 
-def test_load_db_config(db_yaml_file):
+def test_load_db_config(db_yaml_file: str) -> None:
     databases = load_db_config(db_yaml_file)
     assert isinstance(databases["source"], Database)
     assert isinstance(databases["target"], Database)

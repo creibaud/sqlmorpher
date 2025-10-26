@@ -1,14 +1,17 @@
 from .db import Database
 from .joins import generate_join_query
+from sqlalchemy.engine import RowMapping
 from pydantic import validate_call
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Any, Optional, Sequence, Mapping
 from tqdm.rich import tqdm
+
+TransformFn = Callable[[Mapping[str, Any]], Optional[Dict[str, Any]]]
 
 
 def _lookup_insert_fn(
-    transform_registry: Dict[str, Callable], insert_fn_name: str
-):
-    if not insert_fn_name or not isinstance(insert_fn_name, str):
+    transform_registry: Dict[str, TransformFn], insert_fn_name: str
+) -> Optional[TransformFn]:
+    if not insert_fn_name:
         return None
     insert_fn = transform_registry.get(insert_fn_name)
     if insert_fn is None:
@@ -19,16 +22,29 @@ def _lookup_insert_fn(
     return insert_fn
 
 
+def row_to_dict(row: Any) -> dict[str, Any]:
+    if hasattr(row, "_mapping"):
+        return dict(row._mapping)
+    try:
+        return dict(row)
+    except Exception:
+        return {k: getattr(row, k) for k in dir(row) if not k.startswith("_")}
+
+
 def _process_rows(
-    new_db: Database, target_table: str, rows, insert_fn: Callable
-):
+    new_db: Database,
+    target_table: str,
+    rows: Sequence[RowMapping],
+    insert_fn: Optional[TransformFn] = None,
+) -> None:
     for row in rows:
-        row_dict = dict(row._mapping)
+        row_dict: Dict[str, Any] = row_to_dict(row)
 
         if insert_fn and callable(insert_fn):
-            row_dict = insert_fn(row_dict)
-            if row_dict is None:
+            transformed: Optional[Dict[str, Any]] = insert_fn(row_dict)
+            if transformed is None:
                 continue
+            row_dict = transformed
 
         new_db.insert_row(target_table, row_dict)
 
@@ -37,8 +53,8 @@ def _process_rows(
 def migrate(
     old_db: Database,
     new_db: Database,
-    mapping: List[Dict],
-    transform_registry: Dict[str, Callable] = None,
+    mapping: List[Dict[str, Any]],
+    transform_registry: Optional[Dict[str, TransformFn]] = None,
 ) -> str:
     """Migrate data from old_db to new_db based on the provided mapping.
 
@@ -60,11 +76,11 @@ def migrate(
         joins = map_entry.get("joins", [])
         columns = map_entry.get("columns", {})
         target_table = map_entry.get("target_table", root_table)
-        insert_fn_name = map_entry.get("insert_function")
+        insert_fn_name = map_entry.get("insert_function", "")
 
         insert_fn = _lookup_insert_fn(transform_registry, insert_fn_name)
         join_query = generate_join_query(old_db, root_table, joins, columns)
-        rows = old_db.execute_query(join_query).fetchall()
+        rows = old_db.execute_query(join_query) or []
 
         _process_rows(new_db, target_table, rows, insert_fn)
 

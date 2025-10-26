@@ -3,7 +3,7 @@ from sqlmorpher import create_connection_string
 from sqlmorpher import Database
 
 
-def test_database_sqlite_creation():
+def test_database_sqlite_creation() -> None:
     with tempfile.NamedTemporaryFile(suffix=".sqlite") as tmp:
         conn_str = create_connection_string("sqlite", path=tmp.name)
         db = Database(type="sqlite", connection_string=conn_str)
@@ -16,7 +16,7 @@ def test_database_sqlite_creation():
         assert is_connection is True
 
 
-def test_database_reflect_tables():
+def test_database_reflect_tables() -> None:
     with tempfile.NamedTemporaryFile(suffix=".sqlite") as tmp:
         conn_str = create_connection_string("sqlite", path=tmp.name)
         db = Database(type="sqlite", connection_string=conn_str)

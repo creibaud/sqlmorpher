@@ -1,14 +1,14 @@
 import os
-import urllib
+from urllib.parse import quote_plus
 from pydantic import validate_call
-from typing import Optional, Dict
+from typing import Optional, Dict, Any, cast
 from dotenv import load_dotenv
 
 
 load_dotenv()
 
 
-DEFAULTS = {
+DEFAULTS: Dict[str, Dict[str, Any]] = {
     "postgresql": {
         "host": "localhost",
         "port": 5432,
@@ -73,9 +73,9 @@ def _create_odbc(
     type: str, conn_str: str, driver: Optional[str] = None
 ) -> str:
     return (
-        f"{type}+{driver}:///?odbc_connect={urllib.parse.quote_plus(conn_str)}"
+        f"{type}+{driver}:///?odbc_connect={quote_plus(conn_str)}"
         if driver
-        else f"{type}:///?odbc_connect={urllib.parse.quote_plus(conn_str)}"
+        else f"{type}:///?odbc_connect={quote_plus(conn_str)}"
     )
 
 
@@ -104,7 +104,13 @@ def postgresql(
     )
     database = database or DEFAULTS["postgresql"]["database"]
     return _create_server_based(
-        "postgresql", host, port, user, password, database, driver="psycopg2"
+        "postgresql",
+        cast(str, host),
+        cast(int, port),
+        cast(str, user),
+        cast(str, password),
+        cast(str, database),
+        driver="psycopg2",
     )
 
 
@@ -125,7 +131,13 @@ def mysql(
     )
     database = database or DEFAULTS["mysql"]["database"]
     return _create_server_based(
-        "mysql", host, port, user, password, database, driver="pymysql"
+        "mysql",
+        cast(str, host),
+        cast(int, port),
+        cast(str, user),
+        cast(str, password),
+        cast(str, database),
+        driver="pymysql",
     )
 
 
@@ -146,7 +158,13 @@ def oracle(
     )
     database = database or DEFAULTS["oracle"]["database"]
     return _create_server_based(
-        "oracle", host, port, user, password, database, driver="cx_oracle"
+        "oracle",
+        cast(str, host),
+        cast(int, port),
+        cast(str, user),
+        cast(str, password),
+        cast(str, database),
+        driver="cx_oracle",
     )
 
 
@@ -185,7 +203,7 @@ def firebird(
     return _create_odbc("firebird", conn_str, driver="pyodbc")
 
 
-DB_BUILDERS = {
+DB_BUILDERS: Dict[str, Any] = {
     "sqlite": sqlite,
     "duckdb": duckdb,
     "postgresql": postgresql,
@@ -197,7 +215,7 @@ DB_BUILDERS = {
 }
 
 
-def create_connection_string(db_type: str, **kwargs) -> str:
+def create_connection_string(db_type: str, **kwargs: Any) -> str:
     """Create a database connection string (DSN) based on the database
     type and parameters.
 
