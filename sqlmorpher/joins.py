@@ -91,7 +91,7 @@ def validate_joins(
 
     for join_info in join_tables:
         table_name = join_info.get("table")
-        on_clause = join_info.get("on")
+        on_clause = join_info.get("on_clause")
         join_type = join_info.get("type", "INNER").upper()
 
         if not table_name or not on_clause:
@@ -149,7 +149,7 @@ def validate_joins(
 def generate_join_query(
     db: Database,
     root_table_name: str,
-    join_tables: List[Dict[str, str]],
+    join_tables: List[Dict[str, Any]],
     select_columns: Dict[str, str],
 ) -> str:
     """

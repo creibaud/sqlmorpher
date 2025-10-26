@@ -46,10 +46,14 @@ def db_with_schema():
 
 def test_validate_joins_valid(db_with_schema):
     joins = [
-        {"table": "profiles", "on": "users.id = profiles.user_id", "type": "left"},
+        {
+            "table": "profiles",
+            "on_clause": "users.id = profiles.user_id",
+            "type": "left",
+        },
         {
             "table": "countries",
-            "on": "profiles.country_id = countries.id",
+            "on_clause": "profiles.country_id = countries.id",
             "type": "inner",
         },
     ]
@@ -59,7 +63,11 @@ def test_validate_joins_valid(db_with_schema):
 
 def test_validate_joins_invalid_table(db_with_schema):
     joins = [
-        {"table": "nonexistent", "on": "users.id = nonexistent.id", "type": "left"}
+        {
+            "table": "nonexistent",
+            "on_clause": "users.id = nonexistent.id",
+            "type": "left",
+        }
     ]
     with pytest.raises(ValueError, match="Table 'nonexistent' does not exist"):
         validate_joins(db_with_schema, "users", joins)
@@ -67,7 +75,11 @@ def test_validate_joins_invalid_table(db_with_schema):
 
 def test_validate_joins_invalid_column(db_with_schema):
     joins = [
-        {"table": "profiles", "on": "users.id = profiles.unknown_col", "type": "left"}
+        {
+            "table": "profiles",
+            "on_clause": "users.id = profiles.unknown_col",
+            "type": "left",
+        }
     ]
     with pytest.raises(ValueError, match="Column 'unknown_col' does not exist"):
         validate_joins(db_with_schema, "users", joins)
@@ -75,7 +87,13 @@ def test_validate_joins_invalid_column(db_with_schema):
 
 def test_validate_joins_type_mismatch(db_with_schema):
     db_with_schema.execute_query("ALTER TABLE profiles ADD COLUMN created DATE;")
-    joins = [{"table": "profiles", "on": "users.id = profiles.created", "type": "left"}]
+    joins = [
+        {
+            "table": "profiles",
+            "on_clause": "users.id = profiles.created",
+            "type": "left",
+        }
+    ]
     with pytest.raises(
         ValueError,
         match=r"Type mismatch between columns 'users\.id' .* 'profiles\.created'",
@@ -84,17 +102,21 @@ def test_validate_joins_type_mismatch(db_with_schema):
 
 
 def test_validate_joins_invalid_on_clause(db_with_schema):
-    joins = [{"table": "profiles", "on": "invalid_on_clause", "type": "left"}]
+    joins = [{"table": "profiles", "on_clause": "invalid_on_clause", "type": "left"}]
     with pytest.raises(ValueError, match="Invalid ON clause"):
         validate_joins(db_with_schema, "users", joins)
 
 
 def test_generate_join_query(db_with_schema):
     joins = [
-        {"table": "profiles", "on": "users.id = profiles.user_id", "type": "LEFT"},
+        {
+            "table": "profiles",
+            "on_clause": "users.id = profiles.user_id",
+            "type": "LEFT",
+        },
         {
             "table": "countries",
-            "on": "profiles.country_id = countries.id",
+            "on_clause": "profiles.country_id = countries.id",
             "type": "INNER",
         },
     ]

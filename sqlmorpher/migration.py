@@ -2,7 +2,7 @@ from .db import Database
 from .joins import generate_join_query
 from pydantic import validate_call
 from typing import Dict, List, Callable
-from tqdm.auto import tqdm
+from tqdm.rich import tqdm
 
 
 def _lookup_insert_fn(transform_registry: Dict[str, Callable], insert_fn_name: str):
@@ -53,12 +53,11 @@ def migrate(
     for map_entry in tqdm(mapping, desc="Migrating tables", unit="table"):
         root_table = map_entry["root_table"]
         joins = map_entry.get("joins", [])
-        columns = map_entry.get("columns")
+        columns = map_entry.get("columns", {})
         target_table = map_entry.get("target_table", root_table)
         insert_fn_name = map_entry.get("insert_function")
 
         insert_fn = _lookup_insert_fn(transform_registry, insert_fn_name)
-
         join_query = generate_join_query(old_db, root_table, joins, columns)
         rows = old_db.execute_query(join_query).fetchall()
 

@@ -69,7 +69,7 @@ def test_migrate_with_transform_function(old_db, new_db):
             "joins": [
                 {
                     "table": "profiles",
-                    "on": "users.id = profiles.user_id",
+                    "on_clause": "users.id = profiles.user_id",
                     "type": "LEFT",
                 }
             ],
@@ -114,7 +114,7 @@ def test_migrate_with_filtering_function(old_db, new_db):
             "joins": [
                 {
                     "table": "profiles",
-                    "on": "users.id = profiles.user_id",
+                    "on_clause": "users.id = profiles.user_id",
                     "type": "LEFT",
                 }
             ],
@@ -159,7 +159,7 @@ def test_migrate_with_multiple_transforms(old_db, new_db):
             "joins": [
                 {
                     "table": "profiles",
-                    "on": "users.id = profiles.user_id",
+                    "on_clause": "users.id = profiles.user_id",
                     "type": "LEFT",
                 }
             ],
@@ -214,7 +214,7 @@ def test_migrate_without_transform_function(old_db, new_db):
             "joins": [
                 {
                     "table": "profiles",
-                    "on": "users.id = profiles.user_id",
+                    "on_clause": "users.id = profiles.user_id",
                     "type": "LEFT",
                 }
             ],

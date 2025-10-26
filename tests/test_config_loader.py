@@ -15,17 +15,15 @@ def set_env_vars(monkeypatch):
 @pytest.fixture
 def migration_yaml_file():
     content = {
-        "migration": {
-            "migrations": [
-                {
-                    "name": "Test migration",
-                    "root_table": "users",
-                    "joins": [],
-                    "columns": {"users.id": "id"},
-                    "target_table": "new_users",
-                }
-            ]
-        }
+        "migrations": [
+            {
+                "name": "Test migration",
+                "root_table": "users",
+                "joins": [],
+                "columns": {"users.id": "id"},
+                "target_table": "new_users",
+            }
+        ]
     }
     with tempfile.NamedTemporaryFile("w+", suffix=".yaml", delete=False) as f:
         yaml.dump(content, f)
@@ -54,13 +52,9 @@ def db_yaml_file():
 
 
 def test_load_config_and_migration(migration_yaml_file):
-    config = load_config(migration_yaml_file)
-    assert "migration" in config
-
     migration_conf = load_migration_config(migration_yaml_file)
-    assert "migrations" in migration_conf
-    assert len(migration_conf["migrations"]) == 1
-    assert migration_conf["migrations"][0]["root_table"] == "users"
+    assert len(migration_conf) == 1
+    assert migration_conf[0]["root_table"] == "users"
 
 
 def test_load_db_config(db_yaml_file):
