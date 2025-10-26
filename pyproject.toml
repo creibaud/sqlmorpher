@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqlmorpher"
+version = "0.1.0"
+description = "Generic Python SQL migration tool using YAML and business-specific transformations"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    {name="creibaud", email="claudio.reibaud@gmail.com"}
+]
+license = {text = "MIT"}
+keywords = ["sql", "migration", "etl", "yaml", "transformation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "SQLAlchemy>=2.0",
+    "PyYAML>=6.0",
+]
