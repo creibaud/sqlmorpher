@@ -4,8 +4,12 @@ from sqlalchemy.engine import RowMapping
 from pydantic import validate_call
 from typing import Dict, List, Callable, Any, Optional, Sequence, Mapping
 from tqdm.rich import tqdm
+import warnings
 
 TransformFn = Callable[[Mapping[str, Any]], Optional[Dict[str, Any]]]
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def _lookup_insert_fn(
