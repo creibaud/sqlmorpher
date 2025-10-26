@@ -1,7 +1,7 @@
 import os
 from urllib.parse import quote_plus
 from pydantic import validate_call
-from typing import Optional, Dict, Any, cast
+from typing import Optional, Dict, Any, cast, Callable
 from dotenv import load_dotenv
 
 
@@ -203,7 +203,7 @@ def firebird(
     return _create_odbc("firebird", conn_str, driver="pyodbc")
 
 
-DB_BUILDERS: Dict[str, Any] = {
+DB_BUILDERS: Dict[str, Callable[..., str]] = {
     "sqlite": sqlite,
     "duckdb": duckdb,
     "postgresql": postgresql,

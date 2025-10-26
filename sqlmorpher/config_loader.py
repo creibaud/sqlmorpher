@@ -2,7 +2,7 @@ import os
 import yaml
 from .db import Database
 from pydantic import validate_call
-from typing import Dict, List, Any
+from typing import Dict, List, Any, cast
 from .connection_string import create_connection_string
 
 
@@ -16,7 +16,15 @@ def load_config(path: str) -> Dict[str, Any]:
         dict: The contents of the YAML file as a dictionary.
     """
     with open(path, "r") as f:
-        return yaml.safe_load(f)
+        data = yaml.safe_load(f)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        raise ValueError(
+            "Configuration file does not contain a mapping at top level: "
+            + path
+        )
+    return cast(Dict[str, Any], data)
 
 
 @validate_call
@@ -28,7 +36,20 @@ def load_migration_config(path: str) -> List[Dict[str, Any]]:
     Returns:
         List: A list of migration configurations.
     """
-    return load_config(path).get("migrations", [])
+    cfg = load_config(path)
+    migrations_raw = cfg.get("migrations", [])
+    if migrations_raw is None:
+        return []
+    if not isinstance(migrations_raw, list):
+        raise ValueError("'migrations' should be a list in the config file")
+
+    migrations: List[Any] = migrations_raw
+    for idx, item in enumerate(migrations):
+        if not isinstance(item, dict):
+            raise ValueError(
+                "Migration entry at index " + str(idx) + " is not a mapping"
+            )
+    return cast(List[Dict[str, Any]], migrations)
 
 
 @validate_call
