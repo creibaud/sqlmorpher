@@ -77,3 +77,7 @@ migrations:
           "countries.name": "country"
         transform_function: "transform_user_data"
 ```
+
+## License
+
+SQL Morpher is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
