@@ -6,7 +6,7 @@ from typing import Dict, List, Callable, Any, Optional, Sequence, Mapping
 from tqdm.rich import tqdm
 import warnings
 
-TransformFn = Callable[[Mapping[str, Any]], Optional[Dict[str, Any]]]
+TransformFn = Callable[[Database, Mapping[str, Any]], None]
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -45,10 +45,8 @@ def _process_rows(
         row_dict: Dict[str, Any] = row_to_dict(row)
 
         if insert_fn and callable(insert_fn):
-            transformed: Optional[Dict[str, Any]] = insert_fn(row_dict)
-            if transformed is None:
-                continue
-            row_dict = transformed
+            insert_fn(new_db, row_dict)
+            continue
 
         new_db.insert_row(target_table, row_dict)
 

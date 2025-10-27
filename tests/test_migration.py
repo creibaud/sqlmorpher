@@ -53,8 +53,9 @@ def test_migrate_with_transform_function(
     old_db: Database, new_db: Database
 ) -> None:
     def transform_user_data(
+        new_db: Database,
         row: Mapping[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> None:
         transformed = row_to_dict(row)
 
         if "login" in transformed and transformed["login"]:
@@ -63,7 +64,7 @@ def test_migrate_with_transform_function(
         if "telephone" in transformed and transformed["telephone"]:
             transformed["telephone"] = f"+33-{transformed['telephone']}"
 
-        return transformed
+        new_db.insert_row("comptes", transformed)
 
     transform_registry: Dict[str, TransformFn] = {
         "transform_user_data": transform_user_data,
@@ -106,15 +107,16 @@ def test_migrate_with_filtering_function(
     old_db: Database, new_db: Database
 ) -> None:
     def filter_users(
+        new_db: Database,
         row: Mapping[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> None:
         row = row_to_dict(row)
         if not row.get("telephone"):
             return None
 
         row["telephone"] = row["telephone"].replace("-", "").replace(" ", "")
 
-        return row
+        new_db.insert_row("comptes", row)
 
     transform_registry: Dict[str, TransformFn] = {
         "filter_users": filter_users,
@@ -158,13 +160,14 @@ def test_migrate_with_multiple_transforms(
     old_db: Database, new_db: Database
 ) -> None:
     def uppercase_transform(
+        new_db: Database,
         row: Mapping[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+    ) -> None:
         transformed = row_to_dict(row)
         for key, value in transformed.items():
             if isinstance(value, str):
                 transformed[key] = value.upper()
-        return transformed
+        new_db.insert_row("comptes", transformed)
 
     transform_registry: Dict[str, TransformFn] = {
         "uppercase_transform": uppercase_transform,
@@ -207,7 +210,7 @@ def test_migrate_with_unknown_function_raises_error(
     old_db: Database, new_db: Database
 ) -> None:
     transform_registry: Dict[str, TransformFn] = {
-        "existing_function": lambda x: dict(x),
+        "existing_function": lambda db, row: None,
     }
 
     mapping: List[Dict[str, Any]] = [
